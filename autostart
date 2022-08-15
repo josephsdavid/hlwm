@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+###############################################################################
+#       _               _         _   _        __ _                           #
+#      | |__   ___ _ __| |__  ___| |_| |_   _ / _| |_ _      _ _ __ ___       #
+#      | '_ \ / _ \ '__| '_ \/ __| __| | | | | |_| __| \ /\ / | '_ ` _ \      #
+#      | | | |  __/ |  | |_) \__ \ |_| | |_| |  _| |_ \ V  V /| | | | | |     #
+#      |_| |_|\___|_|  |_.__/|___/\__|_|\__,_|_|  \__| \_/\_/ |_| |_| |_|     #
+#                                                                             #
+###############################################################################
+# Initialise                                                                {{{
+#------------------------------------------------------------------------------
+hc() {
+	herbstclient "$@"
+}
+hc emit_hook reload
+#Max default
+configdir="/home/david/.config/herbstluftwm"
+themedir=$configdir/"themes"
+paneldir=$configdir/"panels"
+#bindir=$configdir/"bin"
+# Clear dmenu cache, needed for nixos
+rm ~/.cache/dmenu_run
+
+hc lock
+#hc spawn $bindir/dialoglistener
+#Keybindings
+hc keyunbind --all
+$configdir/keybinds
+
+#theming
+#$themedir/moontheme
+$themedir/maintheme
+#$themedir/papertheme
+#$themedir/snowtheme
+#$themedir/snowtheme
+
+hc unrule -F
+#hc rule class=XTerm tag=3 # move all xterms to tag 3
+hc rule focus=on # normally focus new clients
+hc set focus_follows_mouse 1
+# give focus to most common terminals
+#hc rule class~'(.*[Rr]xvt.*|.*[Tt]erm|Konsole)' focus=on
+hc rule windowtype~'_NET_WM_WINDOW_TYPE_(DIALOG|UTILITY|SPLASH)' pseudotile=on
+hc rule windowtype='_NET_WM_WINDOW_TYPE_DIALOG' focus=on
+hc rule windowtype~'_NET_WM_WINDOW_TYPE_(NOTIFICATION|DOCK|DESKTOP)' manage=off
+hc rule class='GLava' manage=off
+#hc rule class='zoom' floating=on
+
+hc detect_monitors
+hc set default_frame_layout 1
+# panel
+# find the panel
+nmon=$(herbstclient list_monitors | wc -l)
+panel=$paneldir/dzen2/dzenpanel
+[ -x "$panel" ] || panel=/etc/xdg/herbstluftwm/panel.sh
+for monitor in $(herbstclient list_monitors | cut -d: -f1); do
+	"$panel" "$monitor" &
+done
+
+if hc silent new_attr bool my_not_first_autostart; then
+        # hsetroot -solid '#323d43'
+  setxkbmap -option ctrl:nocaps
+  feh --bg-fill ~/Pictures/wallpapers/fox_small_green_pink.jpg
+  pkill picom
+	picom --experimental-backends --backend glx --vsync  --corner-radius 8 --round-borders 100&#  --blur-method dual_kawase --blur-strength 5& 
+	redshift -l 32.776665:-96.796989 -b 1:0.7 &
+	# herbstclient spawn ~/bin/album_daemon.sh
+	hc setenv theme dark
+	hc setenv conky off
+	cp "/home/david/.config/alacritty/everforest.yml" "$HOME/.config/alacritty/alacritty.yml"
+	if [ "$nmon" -gt 1 ]; then
+		bash ~/.screenlayout/2_monitor.sh
+		hc reload
+	fi
+        # conky -c ~/.conky/conkyrc
+fi
+
+hc unlock
+
+# rules
+hc unlock
+hc set tree_style '╾│ ├└╼─┐'
+
+#hc reload
+
+#xset s off -dpms
